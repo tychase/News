@@ -1,66 +1,41 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { articles } from "@/lib/articles";
 
-export default function Home() {
+export const metadata: Metadata = {
+  title: "Home",
+  alternates: {
+    canonical: "/",
+  },
+};
+
+export default function HomePage() {
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main className="container">
+      <header className="hero">
+        <p className="eyebrow">Metro Wire</p>
+        <h1 className="headline">Independent reporting for people who need facts fast.</h1>
+        <p className="lede">
+          Daily coverage of local policy, health systems, and economic shifts that shape regional
+          life.
+        </p>
+      </header>
+
+      <section className="article-list" aria-label="Latest stories">
+        {articles.map((article) => (
+          <article key={article.slug} className="article-card">
+            <p className="kicker">{article.section}</p>
+            <h2>
+              <Link href={`/news/${article.slug}`}>{article.title}</Link>
+            </h2>
+            <p>{article.description}</p>
+            <p className="timestamp">
+              Published {new Date(article.publishedAt).toLocaleString("en-US", { timeZone: "UTC" })}{" "}
+              UTC
+            </p>
+          </article>
+        ))}
+      </section>
+    </main>
   );
 }
