@@ -6,8 +6,8 @@ export function buildNewsArticleJsonLd(article: NewsArticle) {
   return {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
-    headline: article.title,
-    description: article.description,
+    headline: article.headline,
+    description: article.summary,
     datePublished: article.publishedAt,
     dateModified: article.updatedAt,
     mainEntityOfPage: {
@@ -26,4 +26,3 @@ export function buildNewsArticleJsonLd(article: NewsArticle) {
     url,
   };
 }
-

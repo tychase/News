@@ -37,8 +37,8 @@ export function buildRssXml(allArticles: NewsArticle[]): string {
       const url = articleUrl(article);
       return [
         "<item>",
-        `<title>${escapeXml(article.title)}</title>`,
-        `<description>${escapeXml(article.description)}</description>`,
+        `<title>${escapeXml(article.headline)}</title>`,
+        `<description>${escapeXml(article.summary)}</description>`,
         `<link>${escapeXml(url)}</link>`,
         `<guid isPermaLink="true">${escapeXml(url)}</guid>`,
         `<pubDate>${new Date(article.publishedAt).toUTCString()}</pubDate>`,
@@ -101,7 +101,7 @@ export function buildNewsSitemapXml(allArticles: NewsArticle[], now: Date = new 
       `<news:language>${escapeXml(siteConfig.language)}</news:language>`,
       "</news:publication>",
       `<news:publication_date>${escapeXml(toIsoString(article.publishedAt))}</news:publication_date>`,
-      `<news:title>${escapeXml(article.title)}</news:title>`,
+      `<news:title>${escapeXml(article.headline)}</news:title>`,
       "</news:news>",
       "</url>",
     ].join(""),

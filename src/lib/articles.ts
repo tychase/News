@@ -1,64 +1,152 @@
+import fs from "node:fs";
+import path from "node:path";
+import matter from "gray-matter";
+
+export type NewsSource = {
+  name: string;
+  url: string;
+  note?: string;
+};
+
 export type NewsArticle = {
   slug: string;
-  title: string;
-  description: string;
+  headline: string;
+  summary: string;
+  takeaways: string[];
   body: string[];
+  sources: NewsSource[];
   section: string;
   author: string;
   publishedAt: string;
   updatedAt: string;
 };
 
-const now = Date.now();
+type Frontmatter = {
+  headline?: unknown;
+  summary?: unknown;
+  takeaways?: unknown;
+  published?: unknown;
+  updated?: unknown;
+  sources?: unknown;
+  section?: unknown;
+  author?: unknown;
+};
 
-export const articles: NewsArticle[] = [
-  {
-    slug: "city-council-approves-riverfront-housing",
-    title: "City Council Approves Riverfront Housing Plan",
-    description:
-      "A revised proposal adds transit funding and flood-resilience requirements for the downtown riverfront district.",
-    body: [
-      "City officials approved a multi-phase housing plan for the riverfront corridor after months of hearings with neighborhood groups and business owners.",
-      "The final package ties new permits to transit access milestones, flood-resilience benchmarks, and affordable housing targets that will be reviewed quarterly.",
-      "Planning staff said construction could begin this spring if state transportation grants are finalized on schedule.",
-    ],
-    section: "Local",
-    author: "Avery Nelson",
-    publishedAt: new Date(now - 6 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(now - 2 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    slug: "state-budget-talks-enter-final-week",
-    title: "State Budget Talks Enter Final Week of Negotiations",
-    description:
-      "Lawmakers say education and wildfire response remain the two largest unresolved line items.",
-    body: [
-      "Legislative leaders entered the final week of budget negotiations with unresolved disagreements on school funding formulas and emergency response reserves.",
-      "Committee aides said both chambers narrowed most agency allocations, but a long-term wildfire mitigation package is still under debate.",
-      "A floor vote is expected before the statutory deadline, with procedural sessions scheduled through the weekend.",
-    ],
-    section: "Politics",
-    author: "Jordan Patel",
-    publishedAt: new Date(now - 27 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(now - 20 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    slug: "regional-health-system-opens-new-clinic",
-    title: "Regional Health System Opens New Community Clinic",
-    description:
-      "The clinic expands after-hours pediatric care and bilingual telehealth appointments in the north county area.",
-    body: [
-      "Regional Health System opened a new community clinic intended to reduce emergency room pressure during winter respiratory surges.",
-      "Administrators said the site offers after-hours pediatric services, same-day telehealth, and expanded interpretation support.",
-      "Public health officials said the clinic is part of a broader access strategy launched earlier this quarter.",
-    ],
-    section: "Health",
-    author: "Samira Chen",
-    publishedAt: new Date(now - 72 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(now - 70 * 60 * 60 * 1000).toISOString(),
-  },
-];
+const newsDirectory = path.join(process.cwd(), "content", "news");
+
+function assertString(value: unknown, fieldName: string, filePath: string): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new Error(`Invalid "${fieldName}" in ${filePath}. Expected non-empty string.`);
+  }
+
+  return value.trim();
+}
+
+function parseDate(value: unknown, fieldName: string, filePath: string): string {
+  const isoInput = assertString(value, fieldName, filePath);
+  const parsed = new Date(isoInput);
+
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error(`Invalid "${fieldName}" date in ${filePath}: ${isoInput}`);
+  }
+
+  return parsed.toISOString();
+}
+
+function parseTakeaways(value: unknown, filePath: string): string[] {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new Error(`Invalid "takeaways" in ${filePath}. Expected a non-empty list.`);
+  }
+
+  return value.map((item, index) =>
+    assertString(item, `takeaways[${index}]`, filePath),
+  );
+}
+
+function parseSources(value: unknown, filePath: string): NewsSource[] {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new Error(`Invalid "sources" in ${filePath}. Expected a non-empty list.`);
+  }
+
+  return value.map((item, index) => {
+    if (typeof item !== "object" || item === null) {
+      throw new Error(`Invalid source at index ${index} in ${filePath}.`);
+    }
+
+    const source = item as Record<string, unknown>;
+    const name = assertString(source.name, `sources[${index}].name`, filePath);
+    const url = assertString(source.url, `sources[${index}].url`, filePath);
+    const note = source.note ? assertString(source.note, `sources[${index}].note`, filePath) : undefined;
+
+    return { name, url, note };
+  });
+}
+
+function slugFromFileName(fileName: string): string {
+  return fileName.replace(/\.md$/i, "");
+}
+
+function toParagraphs(markdownContent: string): string[] {
+  return markdownContent
+    .split(/\r?\n\s*\r?\n/g)
+    .map((paragraph) => paragraph.replace(/\r?\n/g, " ").trim())
+    .filter((paragraph) => paragraph.length > 0);
+}
+
+function parseArticleFromFile(filePath: string): NewsArticle {
+  const rawFile = fs.readFileSync(filePath, "utf8");
+  const { data, content } = matter(rawFile);
+  const frontmatter = data as Frontmatter;
+
+  const headline = assertString(frontmatter.headline, "headline", filePath);
+  const summary = assertString(frontmatter.summary, "summary", filePath);
+  const takeaways = parseTakeaways(frontmatter.takeaways, filePath);
+  const sources = parseSources(frontmatter.sources, filePath);
+  const publishedAt = parseDate(frontmatter.published, "published", filePath);
+  const updatedAt = frontmatter.updated
+    ? parseDate(frontmatter.updated, "updated", filePath)
+    : publishedAt;
+
+  const body = toParagraphs(content);
+  if (body.length === 0) {
+    throw new Error(`Missing article body in ${filePath}.`);
+  }
+
+  return {
+    slug: slugFromFileName(path.basename(filePath)),
+    headline,
+    summary,
+    takeaways,
+    body,
+    sources,
+    section: frontmatter.section
+      ? assertString(frontmatter.section, "section", filePath)
+      : "News",
+    author: frontmatter.author ? assertString(frontmatter.author, "author", filePath) : "Metro Wire Staff",
+    publishedAt,
+    updatedAt,
+  };
+}
+
+export function getAllArticles(): NewsArticle[] {
+  if (!fs.existsSync(newsDirectory)) {
+    return [];
+  }
+
+  const files = fs
+    .readdirSync(newsDirectory)
+    .filter((fileName) => fileName.endsWith(".md"))
+    .sort();
+
+  const loadedArticles = files.map((fileName) =>
+    parseArticleFromFile(path.join(newsDirectory, fileName)),
+  );
+
+  return loadedArticles.sort(
+    (left, right) => new Date(right.publishedAt).getTime() - new Date(left.publishedAt).getTime(),
+  );
+}
 
 export function getArticleBySlug(slug: string): NewsArticle | undefined {
-  return articles.find((article) => article.slug === slug);
+  return getAllArticles().find((article) => article.slug === slug);
 }

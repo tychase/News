@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { articles } from "@/lib/articles";
+import { getAllArticles } from "@/lib/articles";
 
 export const metadata: Metadata = {
   title: "Home",
@@ -10,6 +10,8 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
+  const articles = getAllArticles();
+
   return (
     <main className="container">
       <header className="hero">
@@ -26,9 +28,9 @@ export default function HomePage() {
           <article key={article.slug} className="article-card">
             <p className="kicker">{article.section}</p>
             <h2>
-              <Link href={`/news/${article.slug}`}>{article.title}</Link>
+              <Link href={`/news/${article.slug}`}>{article.headline}</Link>
             </h2>
-            <p>{article.description}</p>
+            <p>{article.summary}</p>
             <p className="timestamp">
               Published {new Date(article.publishedAt).toLocaleString("en-US", { timeZone: "UTC" })}{" "}
               UTC

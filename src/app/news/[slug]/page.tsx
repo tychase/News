@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { articles, getArticleBySlug } from "@/lib/articles";
+import { getAllArticles, getArticleBySlug } from "@/lib/articles";
 import { absoluteUrl, siteConfig } from "@/lib/site";
 import { buildNewsArticleJsonLd } from "@/lib/structured-data";
 
@@ -9,7 +9,7 @@ type ArticlePageProps = {
 };
 
 export function generateStaticParams() {
-  return articles.map((article) => ({ slug: article.slug }));
+  return getAllArticles().map((article) => ({ slug: article.slug }));
 }
 
 export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
@@ -27,14 +27,14 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
   const canonicalUrl = absoluteUrl(canonicalPath);
 
   return {
-    title: article.title,
-    description: article.description,
+    title: article.headline,
+    description: article.summary,
     alternates: {
       canonical: canonicalPath,
     },
     openGraph: {
-      title: article.title,
-      description: article.description,
+      title: article.headline,
+      description: article.summary,
       type: "article",
       url: canonicalUrl,
       siteName: siteConfig.name,
@@ -44,8 +44,8 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
     },
     twitter: {
       card: "summary_large_image",
-      title: article.title,
-      description: article.description,
+      title: article.headline,
+      description: article.summary,
     },
   };
 }
@@ -64,18 +64,41 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     <main className="container">
       <article className="article-page">
         <p className="kicker">{article.section}</p>
-        <h1 className="article-title">{article.title}</h1>
-        <p className="lede">{article.description}</p>
+        <h1 className="article-title">{article.headline}</h1>
+        <p className="lede">{article.summary}</p>
         <p className="timestamp">
           By {article.author} | Published{" "}
           {new Date(article.publishedAt).toLocaleString("en-US", { timeZone: "UTC" })} UTC
         </p>
+
+        <section className="article-subsection">
+          <h2>Key Takeaways</h2>
+          <ul className="bullet-list">
+            {article.takeaways.map((takeaway) => (
+              <li key={takeaway}>{takeaway}</li>
+            ))}
+          </ul>
+        </section>
 
         <div className="article-body">
           {article.body.map((paragraph) => (
             <p key={paragraph}>{paragraph}</p>
           ))}
         </div>
+
+        <section className="article-subsection">
+          <h2>Sources &amp; Methodology</h2>
+          <ul className="bullet-list">
+            {article.sources.map((source) => (
+              <li key={`${source.name}-${source.url}`}>
+                <a href={source.url} target="_blank" rel="noreferrer">
+                  {source.name}
+                </a>
+                {source.note ? `: ${source.note}` : ""}
+              </li>
+            ))}
+          </ul>
+        </section>
       </article>
 
       <script
@@ -85,4 +108,3 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     </main>
   );
 }
-

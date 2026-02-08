@@ -48,4 +48,7 @@ test("article page has canonical, json-ld, og, and twitter metadata", async ({ p
   await expect(jsonLd).toHaveCount(1);
   const jsonLdText = await jsonLd.first().textContent();
   expect(jsonLdText).toContain("\"@type\":\"NewsArticle\"");
+
+  await expect(page.getByRole("heading", { name: "Key Takeaways" })).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: "Sources & Methodology" })).toHaveCount(1);
 });

@@ -5,9 +5,11 @@ function makeArticle(slug: string, hoursAgo: number, now: Date): NewsArticle {
   const published = new Date(now.getTime() - hoursAgo * 60 * 60 * 1000).toISOString();
   return {
     slug,
-    title: `Title ${slug}`,
-    description: `Description ${slug}`,
+    headline: `Title ${slug}`,
+    summary: `Description ${slug}`,
+    takeaways: ["takeaway"],
     body: ["paragraph"],
+    sources: [{ name: "Source", url: "https://example.com/source" }],
     section: "Local",
     author: "Reporter",
     publishedAt: published,
