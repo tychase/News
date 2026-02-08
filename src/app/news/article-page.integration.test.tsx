@@ -26,6 +26,8 @@ describe("article page metadata", () => {
     expect(html).toContain('"@type":"NewsArticle"');
     expect(html).toContain(`"url":"https://example.com/news/${firstSlug}"`);
     expect(html).toContain("Key Takeaways");
+    expect(html).toContain("Disclosure:");
+    expect(html).toContain("Claim-to-source");
     expect(html).toContain("Sources &amp; Methodology");
   });
 });

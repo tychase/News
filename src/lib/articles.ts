@@ -8,6 +8,12 @@ export type NewsSource = {
   note?: string;
 };
 
+export type NewsClaim = {
+  claim: string;
+  sourceName?: string;
+  sourceUrl?: string;
+};
+
 export type NewsArticle = {
   slug: string;
   headline: string;
@@ -19,6 +25,18 @@ export type NewsArticle = {
   author: string;
   publishedAt: string;
   updatedAt: string;
+  storyId?: string;
+  topic?: string;
+  tags?: string[];
+  geo?: string[];
+  signals?: string[];
+  confidence?: number;
+  generatedAt?: string;
+  version?: string;
+  models?: string[];
+  disclosure?: string;
+  claims?: NewsClaim[];
+  corrections?: string[];
 };
 
 type Frontmatter = {
@@ -30,6 +48,20 @@ type Frontmatter = {
   sources?: unknown;
   section?: unknown;
   author?: unknown;
+  story_id?: unknown;
+  storyId?: unknown;
+  topic?: unknown;
+  tags?: unknown;
+  geo?: unknown;
+  signals?: unknown;
+  confidence?: unknown;
+  generated_at?: unknown;
+  generatedAt?: unknown;
+  version?: unknown;
+  models?: unknown;
+  disclosure?: unknown;
+  claims?: unknown;
+  corrections?: unknown;
 };
 
 const newsDirectory = path.join(process.cwd(), "content", "news");
@@ -53,6 +85,22 @@ function parseDate(value: unknown, fieldName: string, filePath: string): string 
   return parsed.toISOString();
 }
 
+function parseOptionalString(value: unknown, fieldName: string, filePath: string): string | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  return assertString(value, fieldName, filePath);
+}
+
+function parseOptionalDate(value: unknown, fieldName: string, filePath: string): string | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  return parseDate(value, fieldName, filePath);
+}
+
 function parseTakeaways(value: unknown, filePath: string): string[] {
   if (!Array.isArray(value) || value.length === 0) {
     throw new Error(`Invalid "takeaways" in ${filePath}. Expected a non-empty list.`);
@@ -61,6 +109,45 @@ function parseTakeaways(value: unknown, filePath: string): string[] {
   return value.map((item, index) =>
     assertString(item, `takeaways[${index}]`, filePath),
   );
+}
+
+function parseOptionalStringList(
+  value: unknown,
+  fieldName: string,
+  filePath: string,
+): string[] | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  if (typeof value === "string") {
+    return [assertString(value, fieldName, filePath)];
+  }
+
+  if (!Array.isArray(value)) {
+    throw new Error(`Invalid "${fieldName}" in ${filePath}. Expected a string or list.`);
+  }
+
+  return value.map((item, index) => assertString(item, `${fieldName}[${index}]`, filePath));
+}
+
+function parseOptionalNumber(value: unknown, fieldName: string, filePath: string): number | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  throw new Error(`Invalid "${fieldName}" in ${filePath}. Expected a finite number.`);
 }
 
 function parseSources(value: unknown, filePath: string): NewsSource[] {
@@ -79,6 +166,55 @@ function parseSources(value: unknown, filePath: string): NewsSource[] {
     const note = source.note ? assertString(source.note, `sources[${index}].note`, filePath) : undefined;
 
     return { name, url, note };
+  });
+}
+
+function parseClaims(value: unknown, filePath: string): NewsClaim[] | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  if (!Array.isArray(value)) {
+    throw new Error(`Invalid "claims" in ${filePath}. Expected a list.`);
+  }
+
+  return value.map((item, index) => {
+    if (typeof item === "string") {
+      return { claim: assertString(item, `claims[${index}]`, filePath) };
+    }
+
+    if (typeof item !== "object" || item === null) {
+      throw new Error(`Invalid claim at index ${index} in ${filePath}.`);
+    }
+
+    const claim = item as Record<string, unknown>;
+    const claimText = assertString(
+      claim.claim ?? claim.text,
+      `claims[${index}].claim`,
+      filePath,
+    );
+
+    const sourceValue = parseOptionalString(claim.source, `claims[${index}].source`, filePath);
+    let sourceName = parseOptionalString(
+      claim.source_name ?? claim.sourceName,
+      `claims[${index}].source_name`,
+      filePath,
+    );
+    let sourceUrl = parseOptionalString(
+      claim.source_url ?? claim.sourceUrl,
+      `claims[${index}].source_url`,
+      filePath,
+    );
+
+    if (sourceValue) {
+      if (/^https?:\/\//i.test(sourceValue)) {
+        sourceUrl = sourceUrl ?? sourceValue;
+      } else {
+        sourceName = sourceName ?? sourceValue;
+      }
+    }
+
+    return { claim: claimText, sourceName, sourceUrl };
   });
 }
 
@@ -106,6 +242,22 @@ function parseArticleFromFile(filePath: string): NewsArticle {
   const updatedAt = frontmatter.updated
     ? parseDate(frontmatter.updated, "updated", filePath)
     : publishedAt;
+  const storyId = parseOptionalString(frontmatter.story_id ?? frontmatter.storyId, "story_id", filePath);
+  const topic = parseOptionalString(frontmatter.topic, "topic", filePath);
+  const tags = parseOptionalStringList(frontmatter.tags, "tags", filePath);
+  const geo = parseOptionalStringList(frontmatter.geo, "geo", filePath);
+  const signals = parseOptionalStringList(frontmatter.signals, "signals", filePath);
+  const confidence = parseOptionalNumber(frontmatter.confidence, "confidence", filePath);
+  const generatedAt = parseOptionalDate(
+    frontmatter.generated_at ?? frontmatter.generatedAt,
+    "generated_at",
+    filePath,
+  );
+  const version = parseOptionalString(frontmatter.version, "version", filePath);
+  const models = parseOptionalStringList(frontmatter.models, "models", filePath);
+  const disclosure = parseOptionalString(frontmatter.disclosure, "disclosure", filePath);
+  const claims = parseClaims(frontmatter.claims, filePath);
+  const corrections = parseOptionalStringList(frontmatter.corrections, "corrections", filePath);
 
   const body = toParagraphs(content);
   if (body.length === 0) {
@@ -125,6 +277,18 @@ function parseArticleFromFile(filePath: string): NewsArticle {
     author: frontmatter.author ? assertString(frontmatter.author, "author", filePath) : "Metro Wire Staff",
     publishedAt,
     updatedAt,
+    storyId,
+    topic,
+    tags,
+    geo,
+    signals,
+    confidence,
+    generatedAt,
+    version,
+    models,
+    disclosure,
+    claims,
+    corrections,
   };
 }
 

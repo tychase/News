@@ -7,6 +7,12 @@ takeaways:
   - "Construction can begin this spring if grants close on schedule."
 published: "2026-02-08T09:15:00Z"
 updated: "2026-02-08T12:05:00Z"
+disclosure: "This story used AI-assisted drafting support for early outline generation; all facts were verified by staff before publication."
+claims:
+  - claim: "The final vote passed by an 8-1 margin."
+    source: "City Council agenda packet"
+  - claim: "Transit funding is tied to phased permit issuance."
+    source: "Regional transit authority capital plan"
 sources:
   - name: "City Council agenda packet"
     url: "https://example.com/sources/city-council-packet"

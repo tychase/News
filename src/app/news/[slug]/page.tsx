@@ -8,6 +8,31 @@ type ArticlePageProps = {
   params: Promise<{ slug: string }>;
 };
 
+function resolveClaimSource(
+  sourceName: string | undefined,
+  sourceUrl: string | undefined,
+  articleSources: { name: string; url: string }[],
+): { label: string; url: string } | undefined {
+  if (sourceUrl) {
+    return { label: sourceName ?? "Source", url: sourceUrl };
+  }
+
+  if (!sourceName) {
+    return undefined;
+  }
+
+  const matchingSource = articleSources.find((source) => source.name === sourceName);
+  if (matchingSource) {
+    return { label: matchingSource.name, url: matchingSource.url };
+  }
+
+  if (/^https?:\/\//i.test(sourceName)) {
+    return { label: sourceName, url: sourceName };
+  }
+
+  return undefined;
+}
+
 export function generateStaticParams() {
   return getAllArticles().map((article) => ({ slug: article.slug }));
 }
@@ -70,6 +95,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           By {article.author} | Published{" "}
           {new Date(article.publishedAt).toLocaleString("en-US", { timeZone: "UTC" })} UTC
         </p>
+        {article.disclosure ? <p className="disclosure">Disclosure: {article.disclosure}</p> : null}
 
         <section className="article-subsection">
           <h2>Key Takeaways</h2>
@@ -85,6 +111,34 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             <p key={paragraph}>{paragraph}</p>
           ))}
         </div>
+
+        {article.claims && article.claims.length > 0 ? (
+          <section className="article-subsection">
+            <h2>Claim-to-source</h2>
+            <ul className="bullet-list">
+              {article.claims.map((claim, index) => {
+                const claimSource = resolveClaimSource(claim.sourceName, claim.sourceUrl, article.sources);
+                return (
+                  <li key={`${claim.claim}-${index}`}>
+                    {claim.claim}
+                    {claimSource ? (
+                      <>
+                        {" "}
+                        (
+                        <a href={claimSource.url} target="_blank" rel="noreferrer">
+                          {claimSource.label}
+                        </a>
+                        )
+                      </>
+                    ) : claim.sourceName ? (
+                      <> ({claim.sourceName})</>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ) : null}
 
         <section className="article-subsection">
           <h2>Sources &amp; Methodology</h2>

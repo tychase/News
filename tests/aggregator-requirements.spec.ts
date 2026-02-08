@@ -50,5 +50,22 @@ test("article page has canonical, json-ld, og, and twitter metadata", async ({ p
   expect(jsonLdText).toContain("\"@type\":\"NewsArticle\"");
 
   await expect(page.getByRole("heading", { name: "Key Takeaways" })).toHaveCount(1);
+  await expect(page.getByText("Disclosure:")).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: "Claim-to-source" })).toHaveCount(1);
   await expect(page.getByRole("heading", { name: "Sources & Methodology" })).toHaveCount(1);
+});
+
+test("homepage header links to trust page with required sections", async ({ page }) => {
+  await page.goto("/");
+
+  const trustLink = page.getByRole("link", { name: "Trust & Methodology" }).first();
+  await expect(trustLink).toHaveAttribute("href", "/trust");
+  await trustLink.click();
+
+  await expect(page.getByRole("heading", { name: "Trust & Methodology" })).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: "How we work" })).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: "Sources" })).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: "AI disclosure" })).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: "Corrections" })).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: "Independence" })).toHaveCount(1);
 });

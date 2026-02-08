@@ -7,6 +7,31 @@ takeaways:
   - "Emergency protocols are being rehearsed ahead of summer storms."
 published: "2026-02-08T08:40:00Z"
 updated: "2026-02-08T11:20:00Z"
+story_id: "NAT-2026-0208-GRID-001"
+topic: "Energy infrastructure"
+tags:
+  - "energy"
+  - "grid reliability"
+  - "summer demand"
+geo:
+  - "United States"
+signals:
+  - "DOE reliability briefing"
+  - "Regional operator summer preparedness memo"
+confidence: 0.74
+generated_at: "2026-02-08T11:00:00Z"
+version: "1.0.0"
+models:
+  - "gpt-5.3-codex"
+  - "internal-ranking-v2"
+disclosure: "Portions of draft synthesis were AI-assisted and then reviewed by editors against cited documents."
+claims:
+  - claim: "Operators added temporary reserve capacity across six regions."
+    source: "Regional transmission operator update"
+  - claim: "Federal planners consider this the first full summer stress test of post-outage hardening upgrades."
+    source: "DOE reliability briefing"
+corrections:
+  - "No corrections as of publication."
 sources:
   - name: "DOE reliability briefing"
     url: "https://example.com/sources/doe-reliability-briefing"

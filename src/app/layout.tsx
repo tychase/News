@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { absoluteUrl, getSiteUrl, siteConfig } from "@/lib/site";
 import "./globals.css";
 
@@ -33,7 +34,26 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <header className="site-nav">
+          <div className="site-nav-inner">
+            <Link className="site-brand" href="/">
+              Metro Wire
+            </Link>
+            <nav aria-label="Primary">
+              <ul className="site-nav-links">
+                <li>
+                  <Link href="/">Home</Link>
+                </li>
+                <li>
+                  <Link href="/trust">Trust &amp; Methodology</Link>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </header>
+        {children}
+      </body>
     </html>
   );
 }
